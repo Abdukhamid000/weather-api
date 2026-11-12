@@ -1,10 +1,11 @@
 import type { Cache } from '@nestjs/cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HttpClient } from '@nestjs/http-client';
 
 @Injectable()
 export class WeatherService {
+  private logger = new Logger(WeatherService.name);
   constructor(
     private http: HttpClient,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -16,10 +17,15 @@ export class WeatherService {
       return cachedData;
     }
 
-    const { data } = await this.http.get(`/${location}`);
+    try {
+      const { data } = await this.http.get(`/${location}`);
 
-    this.cacheManager.set(location, data, 60000);
+      this.cacheManager.set(location, data, 60000);
 
-    return data;
+      return data;
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 }
